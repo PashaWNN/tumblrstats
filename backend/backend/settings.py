@@ -51,7 +51,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-if DEBUG:
+if DEBUG and not os.getenv('USE_POSTGRES'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
