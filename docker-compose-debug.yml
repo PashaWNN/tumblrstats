@@ -1,0 +1,61 @@
+version: '3.3'
+
+volumes:
+  tumblrstats_dbdata: {}
+
+services:
+  backend:
+    container_name: tstats_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+    volumes:
+    - ./backend:/app
+    command: debug_server
+    restart: on-failure
+    ports:
+      - 8000:8000
+    env_file:
+      - debug.env
+
+  rq_worker:
+    container_name: tstats_scheduler
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+    volumes:
+      - ./backend:/app
+    command: dramatiq_worker
+    restart: on-failure
+    env_file:
+      - debug.env
+
+  frontend:
+    container_name: tstats_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+    - './frontend:/app'
+    - '/app/node_modules'
+    ports:
+      - 3001:3000
+    restart: on-failure
+
+  redis:
+    container_name: tstats_redis
+    image: redis:6.0
+    logging:
+      driver: none
+
+  database:
+    container_name: tstats_db
+    image: postgres:10-alpine
+    volumes:
+    - tumblrstats_dbdata:/var/lib/postgresql/data
+    env_file:
+      - debug.env

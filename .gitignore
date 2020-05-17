@@ -1,0 +1,11 @@
+.env
+debug.env
+.idea
+*.pyc
+venv
+__pycache__
+
+db.sqlite3
+dump.rdb
+
+node_modules

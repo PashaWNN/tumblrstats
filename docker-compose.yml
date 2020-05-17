@@ -1,0 +1,50 @@
+version: '3.3'
+
+volumes:
+  tumblrstats_dbdata: {}
+
+services:
+  backend:
+    image: local/tumblrstats_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+    command: server
+    restart: on-failure
+    env_file:
+      - .env
+
+  rq_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+    command: dramatiq_worker
+    restart: on-failure
+    env_file:
+      - .env
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - 80:80
+    volumes:
+    - ./backend/static:/usr/share/nginx/html/static
+    restart: on-failure
+
+  redis:
+    image: redis:6.0
+    logging:
+      driver: none
+
+  database:
+    image: postgres:10-alpine
+    volumes:
+    - tumblrstats_dbdata:/var/lib/postgresql/data
+    env_file:
+      - .env

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TumblrStats</title>
+</head>
+<body>
+    {% if user %}
+        <p>Вы вошли как {{ user.username }}</p>
+        <p><a href="{% url 'logout' %}">Выйти</a></p>
+    {% else %}
+        <a href="{% url 'login' %}">Войти через Tumblr</a>
+    {% endif %}
+</body>
+</html>
