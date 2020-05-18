@@ -92,7 +92,7 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
-SESSION_COOKIE_HTTPONLY = False
+SESSION_COOKIE_HTTPONLY = False  # Needed for accessing cookies from front end
 
 TUMBLR_CONSUMER_KEY = os.getenv('TUMBLR_CONSUMER_KEY')
 TUMBLR_CONSUMER_SECRET = os.getenv('TUMBLR_CONSUMER_SECRET')
@@ -116,7 +116,3 @@ DRAMATIQ_BROKER = {
         "url": f"redis://{REDIS['host']}:{REDIS['port']}",
     },
 }
-
-# Defines which database should be used to persist Task objects when the
-# AdminMiddleware is enabled.  The default value is "default".
-DRAMATIQ_TASKS_DATABASE = "default"

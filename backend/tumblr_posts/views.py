@@ -17,6 +17,10 @@ class IndexView(View):
 
 
 class RequestUpdateView(View):
+    """
+    Requests posts update for authorized user.
+    User don't wait until posts is updated, it's being updated in background.
+    """
     @login_required
     def get(self, request):
         blog_name = request.user.username
@@ -29,6 +33,9 @@ class RequestUpdateView(View):
 
 
 class TopPostsView(View):
+    """
+    API endpoint to get top posts in JSON format
+    """
     @login_required
     def get(self, request):
         count = request.GET.get('count', 5)
@@ -40,6 +47,9 @@ class TopPostsView(View):
 
 
 class NoteGraphView(View):
+    """
+    API endpoint to get statistics about notes count on all posts
+    """
     @login_required
     def get(self, request):
         blog_name = request.user.username

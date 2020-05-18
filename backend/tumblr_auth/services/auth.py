@@ -1,3 +1,4 @@
+from typing import Optional
 import pytumblr
 import requests
 from django.conf import settings
@@ -5,6 +6,9 @@ from django.contrib.auth import get_user_model, login
 from requests_oauthlib import OAuth1
 from tumblr_auth.models import TumblrCredentials
 from tumblr_auth.exceptions import UnauthorizedError
+
+
+user_model = get_user_model()
 
 
 def parse_qs(query_string):
@@ -35,11 +39,22 @@ def _parse_blog_info(blog):
 
 
 class AuthService:
+    """
+    Tumblr authentication service.
+    This service is responsible to user authentication in Tumblr
+    """
     def __init__(self):
         self.user_model = get_user_model()
 
     @staticmethod
-    def get_tumblr_client(token, secret):
+    def get_tumblr_client(token: str, secret: str) -> pytumblr.TumblrRestClient:
+        """
+        Get pytumblr client for executing API calls on behalf of authorized user
+
+        :param token: user's personal API token
+        :param secret: user's personal API secret key
+        :return: pytubmlr client instance
+        """
         return pytumblr.TumblrRestClient(
             consumer_key=settings.TUMBLR_CONSUMER_KEY,
             consumer_secret=settings.TUMBLR_CONSUMER_SECRET,
@@ -48,12 +63,24 @@ class AuthService:
         )
 
     @staticmethod
-    def get_session_key(request):
+    def get_session_key(request) -> str:
+        """
+        Get session key from request object. Create session key if it doesn't yet exist.
+
+        :param request: HTTP request passed from View
+        :return: session key
+        """
         if request.session.session_key is None:
             request.session.save()
         return request.session.session_key
 
-    def get_login_uri(self, request):
+    def get_login_uri(self, request) -> str:
+        """
+        Generate login URL (URL to which user should be redirected for authorization in Tumblr)
+
+        :param request: HTTP request passed from View
+        :return: URL
+        """
         oauth = OAuth1(client_key=settings.TUMBLR_CONSUMER_KEY, client_secret=settings.TUMBLR_CONSUMER_SECRET)
         response = requests.post(settings.TUMBLR_REQUEST_TOKEN_URL, auth=oauth)
         payload = parse_qs(response.text)
@@ -63,7 +90,16 @@ class AuthService:
         request.session['tumblr_request_secret'] = secret
         return settings.TUMBLR_AUTHORIZATION_URL + '?oauth_token=' + token
 
-    def login_user(self, request, token, secret, verifier):
+    def login_user(self, request, token, secret, verifier) -> Optional[dict]:
+        """
+        Log user in. Will set a cookie to request to make user authenticated if successful.
+
+        :param request: HTTP request
+        :param token: user's personal token
+        :param secret: user's personal secret key
+        :param verifier: user's verifier string
+        :return: user info if logged in successfully, otherwise None
+        """
 
         oauth = OAuth1(client_key=settings.TUMBLR_CONSUMER_KEY, client_secret=settings.TUMBLR_CONSUMER_SECRET,
                        resource_owner_key=token, resource_owner_secret=secret, verifier=verifier)
@@ -84,7 +120,14 @@ class AuthService:
                 login(request, user)
             return info
 
-    def get_user_info(self, user):
+    def get_user_info(self, user: user_model) -> Optional[dict]:
+        """
+        Try to get basic user information if user is authenticated in Tumblr
+
+        :param user: User object
+        :return: User info
+        :raises: UnauthorizedError
+        """
         if not user.tumblrcredentials:
             raise UnauthorizedError()
         token, secret = user.tumblrcredentials.token, user.tumblrcredentials.secret

@@ -6,7 +6,12 @@ from tumblr_posts.services.tumblr import PostsService, BlogsService
 
 
 @dramatiq.actor()
-def update_posts_and_blog_info(user_id):
+def update_posts_and_blog_info(user_id: int):
+    """
+    Task for asynchronous updating posts and blog information
+
+    :param user_id: user id in django
+    """
     user = get_user_model().objects.get(id=user_id)
     blog_name = user.username
     mutex = ConcurrentRateLimiter(RedisBackend(), f"mutex-blog-{blog_name}", limit=1)

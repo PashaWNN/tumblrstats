@@ -1,3 +1,4 @@
+from typing import List
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from tumblr_posts.models import Post, Tag, Blog
@@ -7,11 +8,17 @@ import datetime
 from redis import Redis
 
 
+user_model = get_user_model()
+
+
 class LimitError(RuntimeError):
     pass
 
 
 class PostsService:
+    """
+    Posts service which is responsible for getting information about posts
+    """
     def __init__(self):
         self.api_key = settings.TUMBLR_CONSUMER_KEY
         self.client = pytumblr.TumblrRestClient(self.api_key)
@@ -19,7 +26,13 @@ class PostsService:
         self.redis = Redis(**settings.REDIS)
         self.interval_key = '{}-updated'
 
-    def _retrieve_posts(self, blog_name):
+    def _retrieve_posts(self, blog_name) -> list:
+        """
+        Get all posts from blog by it's name
+
+        :param blog_name: blog name
+        :return: list of posts
+        """
         posts = []
         offset = 0
         limit = 50
@@ -32,10 +45,21 @@ class PostsService:
         return posts
 
     def check_update_interval(self, blog_name):
+        """
+        Check whether posts update is available (i.e. not bumped to limit)
+
+        :param blog_name: blog name to check
+        :return: seconds to next available update or None if can update now
+        """
         ttl = self.redis.ttl(self.interval_key.format(blog_name))
         return ttl if ttl > 0 else None
 
-    def update_posts(self, blog_name):
+    def update_posts(self, blog_name: str) -> None:
+        """
+        Update posts for specific blog
+
+        :param blog_name: blog name
+        """
         self.redis.set(self.interval_key.format(blog_name), 1, ex=self.interval)
         blog = Blog.objects.get(blog_name=blog_name)
         posts = self._retrieve_posts(blog_name)
@@ -62,7 +86,15 @@ class PostsService:
             )
             post_object.tags.set(tags)
 
-    def get_top_posts(self, blog_name, count=5, exclude_reblogs=True):
+    def get_top_posts(self, blog_name: str, count=5, exclude_reblogs=True) -> list:
+        """
+        Get posts top for specific blog
+
+        :param blog_name: blog name
+        :param count: count of posts to get, defaults to 5
+        :param exclude_reblogs: exclude reblogs (useful because reblogged posts often have too much likes)
+        :return: posts top list
+        """
         posts = Post.objects.filter(blog_name=blog_name).order_by('-note_count')
         if exclude_reblogs:
             posts = posts.filter(is_reblog=False)
@@ -75,7 +107,14 @@ class PostsService:
             })
         return result
 
-    def get_notes_stats(self, blog_name, exclude_reblogs=True):
+    def get_notes_stats(self, blog_name: str, exclude_reblogs=True) -> List[int]:
+        """
+        Get just notes counts on all posts. Useful for drawing a graph of notes per post
+
+        :param blog_name: blog name
+        :param exclude_reblogs: exclude reblogs (useful because reblogged posts often have too much likes)
+        :return:
+        """
         posts = Post.objects.filter(blog_name=blog_name).order_by('timestamp').values_list('note_count', flat=True)
         if exclude_reblogs:
             posts.filter(is_reblog=False)
@@ -83,6 +122,9 @@ class PostsService:
 
 
 class BlogsService:
+    """
+    Blogs service which is responsible for getting info about Tumblr blogs
+    """
     def __init__(self):
         self.api_key = settings.TUMBLR_CONSUMER_KEY
         self.client = pytumblr.TumblrRestClient(self.api_key)
@@ -90,7 +132,12 @@ class BlogsService:
         self.redis = Redis(**settings.REDIS)
         self.interval_key = '{}-updated'
 
-    def update_user_info(self, user):
+    def update_user_info(self, user: user_model) -> None:
+        """
+        Update user info from Tumblr
+
+        :param user: User object
+        """
         blog_name = user.username
         self.redis.set(self.interval_key.format(blog_name), 1, ex=self.interval)
         info = AuthService().get_user_info(user)
