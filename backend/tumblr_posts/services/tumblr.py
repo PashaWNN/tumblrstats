@@ -95,7 +95,8 @@ class PostsService:
         :param exclude_reblogs: exclude reblogs (useful because reblogged posts often have too much likes)
         :return: posts top list
         """
-        posts = Post.objects.filter(blog_name=blog_name).order_by('-note_count')
+        blog = Blog.objects.get(blog_name=blog_name)
+        posts = Post.objects.filter(blog=blog).order_by('-note_count')
         if exclude_reblogs:
             posts = posts.filter(is_reblog=False)
         result = []
