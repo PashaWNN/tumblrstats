@@ -116,7 +116,8 @@ class PostsService:
         :param exclude_reblogs: exclude reblogs (useful because reblogged posts often have too much likes)
         :return:
         """
-        posts = Post.objects.filter(blog_name=blog_name).order_by('timestamp').values_list('note_count', flat=True)
+        blog = Blog.objects.get(blog_name=blog_name)
+        posts = Post.objects.filter(blog=blog).order_by('timestamp').values_list('note_count', flat=True)
         if exclude_reblogs:
             posts.filter(is_reblog=False)
         return [i for i in posts]
