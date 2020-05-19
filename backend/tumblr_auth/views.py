@@ -39,6 +39,5 @@ class CallbackView(View):
 class UserInfoView(View):
     @login_required
     def get(self, request):
-        blog_name = request.user.username
         info = AuthService().get_user_info(request.user)
         return HttpResponse(json.dumps(info, ensure_ascii=False), content_type="application/json")
