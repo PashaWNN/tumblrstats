@@ -1,11 +1,12 @@
 import dramatiq
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from dramatiq.rate_limits.backends import RedisBackend
 from dramatiq.rate_limits import ConcurrentRateLimiter
 from tumblr_posts.services.tumblr import PostsService, BlogsService
 
 
-@dramatiq.actor()
+@dramatiq.actor
 def update_posts_and_blog_info(user_id: int):
     """
     Task for asynchronous updating posts and blog information
@@ -14,9 +15,9 @@ def update_posts_and_blog_info(user_id: int):
     """
     user = get_user_model().objects.get(id=user_id)
     blog_name = user.username
-    mutex = ConcurrentRateLimiter(RedisBackend(), f"mutex-blog-{blog_name}", limit=1)
+    mutex = ConcurrentRateLimiter(RedisBackend(**settings.REDIS), f"mutex-blog-{blog_name}", limit=1)
     with mutex.acquire(raise_on_failure=False) as acquired:
         if not acquired:
             return False
         BlogsService().update_user_info(user)
-        PostsService().update_posts(blog_name)
+        PostsService().update_posts(user)

@@ -50,8 +50,6 @@ services:
   redis:
     container_name: tstats_redis
     image: redis:6.0
-    logging:
-      driver: none
 
   database:
     container_name: tstats_db

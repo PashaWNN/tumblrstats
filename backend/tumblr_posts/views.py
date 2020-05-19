@@ -39,10 +39,9 @@ class TopPostsView(View):
     @login_required
     def get(self, request):
         count = request.GET.get('count', 5)
-        blog_name = request.user.username
         if not (0 < count <= 50):
             return HttpResponseBadRequest('Count must be within 1..50')
-        posts = PostsService().get_top_posts(blog_name, count=count)
+        posts = PostsService().get_top_posts(request.user, count=count)
         return HttpResponse(json.dumps(posts, ensure_ascii=False), content_type="application/json")
 
 
@@ -52,6 +51,5 @@ class NoteGraphView(View):
     """
     @login_required
     def get(self, request):
-        blog_name = request.user.username
-        statistics = PostsService().get_notes_stats(blog_name)
+        statistics = PostsService().get_notes_stats(request.user)
         return HttpResponse(json.dumps(statistics), content_type="application/json")

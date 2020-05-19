@@ -112,10 +112,13 @@ class AuthService:
             info = client.info()
             if info is not None:
                 user, created = self.user_model.objects.get_or_create(username=info['user']['name'])
-                TumblrCredentials.objects.update_or_create(user=user, defaults={
-                    'token': access_token,
-                    'secret': access_token_secret,
-                })
+                TumblrCredentials.objects.update_or_create(
+                    user=user,
+                    defaults={
+                        'token': access_token,
+                        'secret': access_token_secret,
+                    }
+                )
                 info['created'] = created
                 login(request, user)
             return info
@@ -128,9 +131,10 @@ class AuthService:
         :return: User info
         :raises: UnauthorizedError
         """
-        if not user.tumblrcredentials:
+        try:
+            token, secret = user.tumblrcredentials.token, user.tumblrcredentials.secret
+        except TumblrCredentials.DoesNotExist:
             raise UnauthorizedError()
-        token, secret = user.tumblrcredentials.token, user.tumblrcredentials.secret
         client = self.get_tumblr_client(token, secret)
         info = client.info()['user']
         result = {

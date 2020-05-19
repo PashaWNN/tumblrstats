@@ -112,7 +112,13 @@ REDIS = {
 
 DRAMATIQ_BROKER = {
     "BROKER": "dramatiq.brokers.redis.RedisBroker",
-    "OPTIONS": {
-        "url": f"redis://{REDIS['host']}:{REDIS['port']}",
-    },
+    "OPTIONS": REDIS,
+}
+
+DRAMATIQ_RESULT_BACKEND = {
+    "BACKEND": "dramatiq.results.backends.redis.RedisBackend",
+    "BACKEND_OPTIONS": REDIS,
+    "MIDDLEWARE_OPTIONS": {
+        "result_ttl": 60000
+    }
 }

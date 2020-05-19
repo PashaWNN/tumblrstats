@@ -1,3 +1,4 @@
+import re
 from functools import wraps
 
 from django.http import HttpResponse
@@ -27,3 +28,17 @@ def login_required(func):
             return HttpResponse("You must be logged in", status=401)
         return func(self, request, *args, **kwargs)
     return wrapper
+
+
+def shorten_post_url(url):
+    """
+    Function for removing slug from post url
+
+    :param url: original url in format https://blog-name.tumblr.com/post/id/slug
+    :return: shortened url without slug or original url if can't match it
+    """
+    match = re.match(r'http(?:s)://.+tumblr\.com/post/[0-9]+/', url)
+    if match is not None:
+        return match.group(0)
+    else:
+        return url
